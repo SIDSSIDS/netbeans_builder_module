@@ -46,7 +46,7 @@ class FluentSettersMaker {
             if (member.getKind().equals(Tree.Kind.METHOD)) {
                 MethodTree mt = (MethodTree) member;
                 for (Element element : elements) {
-                    if (mt.getName().contentEquals(element.getSimpleName()) &&
+                    if (mt.getName().contentEquals(getSetterName(element.getSimpleName())) &&
                             mt.getParameters().size() == 1 &&
                             mt.getReturnType() != null &&
                             mt.getReturnType().getKind() == Tree.Kind.IDENTIFIER) {
@@ -72,7 +72,7 @@ class FluentSettersMaker {
             VariableTree parameter =
                     make.Variable(make.Modifiers(Collections.<Modifier>singleton(Modifier.FINAL),
                             Collections.<AnnotationTree>emptyList()),
-                            "value",
+                            element.getSimpleName(),
                             make.Identifier(toStringWithoutPackages(element)),
                             null);
 
@@ -82,7 +82,7 @@ class FluentSettersMaker {
 
             MethodTree method = make.Method(
                     make.Modifiers(modifiers, annotations),
-                    element.getSimpleName(),
+                    getSetterName(element.getSimpleName()),
                     returnType,
                     Collections.<TypeParameterTree>emptyList(),
                     Collections.<VariableTree>singletonList(parameter),
@@ -94,13 +94,21 @@ class FluentSettersMaker {
             members.add(position, method);
         }
     }
+    
+    private static CharSequence getSetterName(CharSequence fieldName) {
+        return String.format("with%s%s",
+                Character.toUpperCase(fieldName.charAt(0)),
+                fieldName.subSequence(1, fieldName.length()));
+    }
 
     private static String createFluentSetterMethodBody(Element element) {
         StringBuilder sb = new StringBuilder();
-        sb.append("{\nthis.")
-                .append(element.getSimpleName())
-                .append(" = value;\n")
-                .append("return this;\n}");
+        sb.append("{\n")
+          .append("this.").append(element.getSimpleName())
+          .append(" = ")
+          .append(element.getSimpleName()).append(";\n")
+          .append("return this;\n")
+          .append("}");
         return sb.toString();
     }
 
